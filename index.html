@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KING DASHBOARD - AUTO RESET</title>
+    <title>KING DASHBOARD - GOLTOGEL</title>
     <style>
         :root { --gold: #d4af37; --bg: #0b0f19; --card: #161b2a; --text: #ffffff; --gray: #94a3b8; --red: #ff4d4d; --green: #00ff88; --warn: #ffcc00; --line: #2d3748; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        header { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        
+        /* Header dengan Logo */
+        header { background: var(--card); padding: 15px 25px; border-radius: 12px; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-left img { height: 45px; width: auto; } /* Ukuran Logo */
+        .brand-title { margin: 0; color: var(--gold); font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; }
+        
         .amount { font-size: 1.5rem; color: var(--gold); font-weight: 800; }
         .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
         .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--line); }
@@ -17,6 +23,7 @@
         input, select { width: 100%; padding: 10px; background: #000; border: 1px solid var(--line); border-radius: 6px; color: #fff; box-sizing: border-box; outline: none; }
         .btn-primary { width: 100%; padding: 12px; background: var(--gold); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; }
         .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+        
         .search-box { margin-bottom: 15px; }
         .date-divider { background: rgba(212, 175, 55, 0.1); color: var(--gold); padding: 8px 15px; border-radius: 6px; margin: 20px 0 10px 0; font-weight: bold; border-left: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
         table { width: 100%; border-collapse: collapse; }
@@ -24,13 +31,18 @@
         td { padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
         .status-select { padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; background: transparent; border: 1px solid var(--line); color: inherit; }
         .btn-del { color: var(--red); background: none; border: 1px solid var(--red); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+
+        @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } .header-left img { height: 35px; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <div><h2 style="margin:0; color:var(--gold)">BUY&FREE SPIN GOLTOGEL</h2></div>
+        <div class="header-left">
+            <img src="https://omagad.xyz/goltogel/logo/goltogel-logo-header.png" alt="Logo">
+            <h2 class="brand-title">BUY & FREE SPIN</h2>
+        </div>
         <div style="text-align:right">
             <small id="current-date-label" style="color:var(--gray); text-transform: uppercase; font-size: 10px;"></small>
             <div class="amount" id="global-payout">Rp 0</div>
@@ -82,7 +94,6 @@
         return "Rp " + Math.floor(n).toLocaleString('en-US');
     }
 
-    // Fungsi mendapatkan tanggal hari ini dalam format string standar
     function getToday() {
         return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     }
@@ -112,7 +123,6 @@
         const b = parseFloat(document.getElementById('bet').value) || 0;
         const d = getToday();
 
-        // Validasi Duplikat: Satu ID dan satu User hanya bisa 1x klaim per hari
         if (db.some(i => (i.u === u || i.p === p) && i.d === d)) {
             alert("⚠️ USER ID ATAU ID TIKET INI SUDAH KLAIM HARI INI!"); 
             return;
@@ -176,18 +186,11 @@
     function updateTotal() {
         const today = getToday();
         document.getElementById('current-date-label').innerText = "PAYOUT HARI INI (" + today + ")";
-        
-        // Filter hanya data yang statusnya 'Done' DAN tanggalnya sama dengan hari ini
         const total = db.filter(i => i.s === 'Done' && i.d === today).reduce((s, i) => s + i.bonus, 0);
-        
-        // Jika tidak ada data 'Done' hari ini, otomatis menjadi Rp 0 (Reset)
         document.getElementById('global-payout').innerText = fmt(total);
     }
 
-    // Inisialisasi saat load
     window.onload = save;
-
-    // Tambahan: Auto refresh payout setiap 1 menit untuk memastikan reset saat tengah malam
     setInterval(updateTotal, 60000);
 </script>
 </body>

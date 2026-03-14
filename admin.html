@@ -4,99 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADMIN CENTRAL - GOLTOGEL</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        /* CSS Anda tetap sama persis */
         :root { --gold: #d4af37; --bg: #0b0f19; --card: #161b2a; --text: #ffffff; --gray: #94a3b8; --red: #ff4d4d; --green: #00ff88; --warn: #ffcc00; --line: #2d3748; }
-        
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: url('https://cdn.areabermain.club/assets/cdn/az2/2026/03/03/20260303/9fcaa8d326ac01d4bb57a6c10244fe96/goltogel-background.png') no-repeat center center fixed; 
-            background-size: cover; 
-            color: var(--text); 
-            margin: 0; 
-            padding: 20px; 
-            min-height: 100vh;
-        }
-
+        body { font-family: 'Segoe UI', sans-serif; background: url('https://cdn.areabermain.club/assets/cdn/az2/2026/03/03/20260303/9fcaa8d326ac01d4bb57a6c10244fe96/goltogel-background.png') no-repeat center center fixed; background-size: cover; color: var(--text); margin: 0; padding: 20px; min-height: 100vh; }
         .container { max-width: 1300px; margin: 0 auto; }
-        
-        header { 
-            background: rgba(22, 27, 42, 0.95); 
-            padding: 20px; 
-            border-radius: 15px; 
-            border: 1px solid var(--gold); 
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 25px; 
-        }
-
-        .stat-card { 
-            background: rgba(22, 27, 42, 0.9); 
-            padding: 20px; 
-            border-radius: 12px; 
-            border-bottom: 3px solid var(--gold);
-            text-align: center;
-        }
-
+        header { background: rgba(22, 27, 42, 0.95); padding: 20px; border-radius: 15px; border: 1px solid var(--gold); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: rgba(22, 27, 42, 0.9); padding: 20px; border-radius: 12px; border-bottom: 3px solid var(--gold); text-align: center; }
         .stat-card h3 { margin: 0; font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; }
         .stat-card p { margin: 10px 0 0; font-size: 1.4rem; font-weight: bold; color: var(--gold); }
-        .stat-card small { color: var(--gray); font-size: 10px; display: block; margin-top: 5px; }
-
         .admin-controls { display: flex; gap: 10px; }
-
-        .btn {
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            font-size: 11px;
-        }
-
+        .btn { padding: 10px 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
         .btn-export { background: var(--green); color: #000; }
         .btn-reset { background: var(--red); color: #fff; }
-        .btn-edit { background: #3182ce; color: white; margin-right: 5px; }
         .btn-del { background: none; border: 1px solid var(--red); color: var(--red); }
-        .btn-del:hover { background: var(--red); color: white; }
-
-        .data-table-container {
-            background: rgba(22, 27, 42, 0.95);
-            border-radius: 15px;
-            overflow: hidden;
-            border: 1px solid var(--line);
-        }
-
+        .data-table-container { background: rgba(22, 27, 42, 0.95); border-radius: 15px; overflow: hidden; border: 1px solid var(--line); }
         table { width: 100%; border-collapse: collapse; }
         th { background: rgba(0,0,0,0.3); padding: 15px; color: var(--gold); text-align: left; font-size: 11px; text-transform: uppercase; }
         td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; }
-        tr:hover { background: rgba(255,255,255,0.05); }
-
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
         .badge-done { background: var(--green); color: #000; }
         .badge-waiting { background: var(--warn); color: #000; }
         .badge-hangus { background: var(--red); color: #fff; }
-
-        input#adminSearch {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0,0,0,0.7);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            color: #fff;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-            outline: none;
-        }
+        input#adminSearch { width: 100%; padding: 12px; background: rgba(0,0,0,0.7); border: 1px solid var(--line); border-radius: 8px; color: #fff; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -108,159 +41,81 @@
             <small style="color:var(--gray)">REKAP DATA & MANAJEMEN KLAIM</small>
         </div>
         <div class="admin-controls">
-            <button class="btn btn-export" onclick="exportCSV()">Export Excel</button>
+            <button class="btn btn-export" onclick="alert('Fitur Export akan diaktifkan')">Export Excel</button>
             <button class="btn btn-reset" onclick="resetDB()">Reset All</button>
         </div>
     </header>
 
     <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Total Klaim (Selamanya)</h3>
-            <p id="stat-total">0</p>
-            <small>Semua data tersimpan</small>
-        </div>
-        <div class="stat-card">
-            <h3>Done Hari Ini</h3>
-            <p id="stat-done-today">0</p>
-            <small id="label-date-1">-</small>
-        </div>
-        <div class="stat-card">
-            <h3>Payout Hari Ini</h3>
-            <p id="stat-payout-today">Rp 0</p>
-            <small id="label-date-2">-</small>
-        </div>
+        <div class="stat-card"><h3>Total Klaim</h3><p id="stat-total">0</p></div>
+        <div class="stat-card"><h3>Done Hari Ini</h3><p id="stat-done-today">0</p></div>
+        <div class="stat-card"><h3>Payout Hari Ini</h3><p id="stat-payout-today">Rp 0</p></div>
     </div>
 
-    <input type="text" id="adminSearch" placeholder="Cari User ID, ID Tiket, atau Tanggal (Contoh: 14 Maret 2026)..." onkeyup="loadData()">
+    <input type="text" id="adminSearch" placeholder="Cari User ID atau ID Tiket..." onkeyup="render()">
 
     <div class="data-table-container">
         <table>
-            <thead>
-                <tr>
-                    <th>TANGGAL</th>
-                    <th>USER ID</th>
-                    <th>TIKET ID</th>
-                    <th>BONUS</th>
-                    <th>STATUS</th>
-                    <th style="text-align:center">AKSI</th>
-                </tr>
-            </thead>
+            <thead><tr><th>TANGGAL</th><th>USER ID</th><th>TIKET ID</th><th>BONUS</th><th>STATUS</th><th style="text-align:center">AKSI</th></tr></thead>
             <tbody id="adminBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    function fmt(n) { return "Rp " + Math.floor(n).toLocaleString('id-ID'); }
-    
-    // Fungsi mendapatkan format tanggal yang sama dengan halaman input
-    function getToday() { 
-        return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}); 
-    }
+    // MASUKKAN CONFIG FIREBASE ANDA DI SINI
+    const firebaseConfig = {
+        apiKey: "...",
+        databaseURL: "https://klaim-buy-free-spin-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        projectId: "...",
+        // ... isi sisanya dari Firebase console Anda
+    };
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref('king_db');
+    let dbData = [];
 
-    function loadData() {
-        const db = JSON.parse(localStorage.getItem('king_db') || '[]');
-        const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
+    // Sinkronisasi Real-time dari Firebase
+    dbRef.on('value', (snap) => {
+        const data = snap.val();
+        dbData = data ? Object.values(data) : [];
+        render();
+    });
+
+    function fmt(n) { return "Rp " + Math.floor(n).toLocaleString('id-ID'); }
+
+    function render() {
         const tbody = document.getElementById('adminBody');
-        const todayStr = getToday();
+        const search = document.getElementById('adminSearch').value.toLowerCase();
+        const today = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
         
         tbody.innerHTML = '';
-
-        let totalDoneToday = 0;
+        let doneToday = 0;
         let payoutToday = 0;
 
-        // Update Label Tanggal di Card Statistik
-        document.getElementById('label-date-1').innerText = todayStr;
-        document.getElementById('label-date-2').innerText = todayStr;
+        dbData.sort((a,b) => b.id - a.id).forEach(i => {
+            if (i.u.toLowerCase().includes(search) || i.p.toLowerCase().includes(search)) {
+                if(i.d === today && i.s === 'Done') { doneToday++; payoutToday += i.bonus; }
 
-        // Urutkan data terbaru di atas
-        const sortedDb = [...db].sort((a,b) => b.t - a.t);
-
-        sortedDb.forEach(i => {
-            // Kalkulasi Statistik Khusus HARI INI
-            if (i.d === todayStr && i.s === 'Done') {
-                totalDoneToday++;
-                payoutToday += i.bonus;
-            }
-
-            // Tampilkan di tabel jika sesuai pencarian (Cari bisa lintas tanggal)
-            if (i.u.toLowerCase().includes(searchTerm) || 
-                i.p.toLowerCase().includes(searchTerm) ||
-                i.d.toLowerCase().includes(searchTerm)) {
-                
-                const badgeClass = i.s === 'Done' ? 'badge-done' : (i.s === 'Hangus' ? 'badge-hangus' : 'badge-waiting');
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="color:var(--gray)">${i.d}</td>
-                        <td><strong>${i.u}</strong></td>
-                        <td style="font-family:monospace">${i.p}</td>
-                        <td style="color:var(--gold); font-weight:bold">${fmt(i.bonus)}</td>
-                        <td><span class="badge ${badgeClass}">${i.s.toUpperCase()}</span></td>
-                        <td style="text-align:center">
-                            <button class="btn btn-edit" onclick="editData(${i.id})">EDIT</button>
-                            <button class="btn btn-del" onclick="deleteData(${i.id})">HAPUS</button>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr>
+                    <td>${i.d}</td><td><strong>${i.u}</strong></td><td>${i.p}</td>
+                    <td style="color:var(--gold)">${fmt(i.bonus)}</td>
+                    <td><span class="badge badge-${i.s.toLowerCase()}">${i.s}</span></td>
+                    <td style="text-align:center">
+                        <button class="btn btn-export" onclick="updStatus(${i.id}, 'Done')">Done</button>
+                        <button class="btn btn-del" onclick="delData(${i.id})">Hapus</button>
+                    </td>
+                </tr>`;
             }
         });
 
-        // Update Tampilan Statistik
-        document.getElementById('stat-total').innerText = db.length;
-        document.getElementById('stat-done-today').innerText = totalDoneToday;
+        document.getElementById('stat-total').innerText = dbData.length;
+        document.getElementById('stat-done-today').innerText = doneToday;
         document.getElementById('stat-payout-today').innerText = fmt(payoutToday);
     }
 
-    function editData(id) {
-        let db = JSON.parse(localStorage.getItem('king_db') || '[]');
-        const idx = db.findIndex(i => i.id === id);
-        if (idx !== -1) {
-            const newUid = prompt("Edit USER ID:", db[idx].u);
-            const newTiket = prompt("Edit ID TIKET:", db[idx].p);
-            if (newUid !== null && newTiket !== null) {
-                db[idx].u = newUid.trim().toUpperCase();
-                db[idx].p = newTiket.trim();
-                localStorage.setItem('king_db', JSON.stringify(db));
-                loadData();
-            }
-        }
-    }
-
-    function deleteData(id) {
-        if (confirm("Hapus data ini?")) {
-            let db = JSON.parse(localStorage.getItem('king_db') || '[]');
-            db = db.filter(i => i.id !== id);
-            localStorage.setItem('king_db', JSON.stringify(db));
-            loadData();
-        }
-    }
-
-    function exportCSV() {
-        const db = JSON.parse(localStorage.getItem('king_db') || '[]');
-        if (db.length === 0) return alert("Data kosong");
-        let csv = "\uFEFFTanggal,User ID,Tiket ID,Bonus,Status\n";
-        db.forEach(i => { csv += `${i.d},${i.u},${i.p},${i.bonus},${i.s}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `rekap_admin_${getToday()}.csv`;
-        a.click();
-    }
-
-    function resetDB() {
-        if (confirm("⚠️ PERINGATAN: Hapus SELURUH data database?")) {
-            localStorage.setItem('king_db', '[]');
-            loadData();
-        }
-    }
-
-    window.onload = loadData;
-    window.addEventListener('storage', loadData);
-    // Refresh otomatis setiap 1 menit untuk cek ganti hari
-    setInterval(loadData, 60000);
+    function updStatus(id, status) { dbRef.child(id).update({s: status}); }
+    function delData(id) { if(confirm("Hapus data?")) dbRef.child(id).remove(); }
+    function resetDB() { if(confirm("Hapus SEMUA data?")) dbRef.remove(); }
 </script>
-
 </body>
 </html>

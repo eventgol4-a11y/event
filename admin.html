@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN CENTRAL - GOLTOGEL</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0b0f19; --card: #161b2a; --text: #ffffff; --gray: #94a3b8; --red: #ff4d4d; --green: #00ff88; --warn: #ffcc00; --line: #2d3748; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: url('https://cdn.areabermain.club/assets/cdn/az2/2026/03/03/20260303/9fcaa8d326ac01d4bb57a6c10244fe96/goltogel-background.png') no-repeat center center fixed; 
+            background-size: cover; 
+            color: var(--text); 
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { 
+            background: rgba(22, 27, 42, 0.95); 
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 1px solid var(--gold); 
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 25px; 
+        }
+
+        .stat-card { 
+            background: rgba(22, 27, 42, 0.9); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border-bottom: 3px solid var(--gold);
+            text-align: center;
+        }
+
+        .stat-card h3 { margin: 0; font-size: 12px; color: var(--gray); text-transform: uppercase; }
+        .stat-card p { margin: 10px 0 0; font-size: 1.4rem; font-weight: bold; color: var(--gold); }
+
+        .admin-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn-export { background: var(--green); color: #000; }
+        .btn-reset { background: var(--red); color: #fff; }
+        .btn-search { background: var(--gold); color: #000; flex: 1; }
+
+        .data-table-container {
+            background: rgba(22, 27, 42, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: rgba(0,0,0,0.3); padding: 15px; color: var(--gold); text-align: left; font-size: 12px; }
+        td { padding: 15px; border-bottom: 1px solid var(--line); font-size: 13px; }
+        tr:hover { background: rgba(255,255,255,0.05); }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .badge-done { background: var(--green); color: #000; }
+        .badge-waiting { background: var(--warn); color: #000; }
+        .badge-hangus { background: var(--red); color: #fff; }
+
+        input#adminSearch {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1 style="margin:0; color:var(--gold); font-size: 1.5rem;">ADMIN CENTRAL</h1>
+            <small style="color:var(--gray)">REKAP DATA & MANAJEMEN KLAIM</small>
+        </div>
+        <div class="admin-controls">
+            <button class="btn btn-export" onclick="exportCSV()">Export Excel</button>
+            <button class="btn btn-reset" onclick="resetDB()">Reset Data</button>
+        </div>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Klaim</h3>
+            <p id="stat-total">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total "Done"</h3>
+            <p id="stat-done">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Payout (Done)</h3>
+            <p id="stat-payout">Rp 0</p>
+        </div>
+    </div>
+
+    <input type="text" id="adminSearch" placeholder="Cari berdasarkan User ID, ID Tiket, atau Tanggal..." onkeyup="loadData()">
+
+    <div class="data-table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>TANGGAL</th>
+                    <th>USER ID</th>
+                    <th>TIKET ID</th>
+                    <th>BET</th>
+                    <th>BONUS</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody id="adminBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function fmt(n) { return "Rp " + Math.floor(n).toLocaleString('id-ID'); }
+
+    function loadData() {
+        const db = JSON.parse(localStorage.getItem('king_db') || '[]');
+        const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
+        const tbody = document.getElementById('adminBody');
+        tbody.innerHTML = '';
+
+        let countDone = 0;
+        let totalPayout = 0;
+
+        // Filter data
+        const filtered = db.filter(i => 
+            i.u.toLowerCase().includes(searchTerm) || 
+            i.p.toLowerCase().includes(searchTerm) ||
+            i.d.toLowerCase().includes(searchTerm)
+        ).sort((a,b) => b.t - a.t);
+
+        filtered.forEach(i => {
+            if (i.s === 'Done') {
+                countDone++;
+                totalPayout += i.bonus;
+            }
+
+            const badgeClass = i.s === 'Done' ? 'badge-done' : (i.s === 'Hangus' ? 'badge-hangus' : 'badge-waiting');
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td style="color:var(--gray)">${i.d}</td>
+                    <td><strong>${i.u}</strong></td>
+                    <td style="font-family:monospace">${i.p}</td>
+                    <td>${fmt(i.b)}</td>
+                    <td style="color:var(--gold); font-weight:bold">${fmt(i.bonus)}</td>
+                    <td><span class="badge ${badgeClass}">${i.s.toUpperCase()}</span></td>
+                </tr>
+            `;
+        });
+
+        // Update Stats
+        document.getElementById('stat-total').innerText = filtered.length;
+        document.getElementById('stat-done').innerText = countDone;
+        document.getElementById('stat-payout').innerText = fmt(totalPayout);
+    }
+
+    function exportCSV() {
+        const db = JSON.parse(localStorage.getItem('king_db') || '[]');
+        if (db.length === 0) return alert("Tidak ada data untuk diekspor");
+
+        let csv = "Tanggal,User ID,Tiket ID,Bettingan,Bonus,Status\n";
+        db.forEach(i => {
+            csv += `${i.d},${i.u},${i.p},${i.b},${i.bonus},${i.s}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'rekap_klaim_goltogel.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function resetDB() {
+        if (confirm("⚠️ PERINGATAN: Semua data akan dihapus permanen! Lanjutkan?")) {
+            localStorage.setItem('king_db', '[]');
+            loadData();
+        }
+    }
+
+    // Refresh data setiap 30 detik jika ada perubahan di tab lain
+    window.onload = loadData;
+    window.addEventListener('storage', loadData);
+</script>
+
+</body>
+</html>

@@ -46,8 +46,9 @@
             text-align: center;
         }
 
-        .stat-card h3 { margin: 0; font-size: 12px; color: var(--gray); text-transform: uppercase; }
+        .stat-card h3 { margin: 0; font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; }
         .stat-card p { margin: 10px 0 0; font-size: 1.4rem; font-weight: bold; color: var(--gold); }
+        .stat-card small { color: var(--gray); font-size: 10px; display: block; margin-top: 5px; }
 
         .admin-controls { display: flex; gap: 10px; }
 
@@ -96,7 +97,6 @@
             box-sizing: border-box;
             outline: none;
         }
-        input#adminSearch:focus { border-color: var(--gold); }
     </style>
 </head>
 <body>
@@ -115,20 +115,23 @@
 
     <div class="stats-grid">
         <div class="stat-card">
-            <h3>Total Klaim</h3>
+            <h3>Total Klaim (Selamanya)</h3>
             <p id="stat-total">0</p>
+            <small>Semua data tersimpan</small>
         </div>
         <div class="stat-card">
-            <h3>Total "Done"</h3>
-            <p id="stat-done">0</p>
+            <h3>Done Hari Ini</h3>
+            <p id="stat-done-today">0</p>
+            <small id="label-date-1">-</small>
         </div>
         <div class="stat-card">
-            <h3>Total Payout (Done)</h3>
-            <p id="stat-payout">Rp 0</p>
+            <h3>Payout Hari Ini</h3>
+            <p id="stat-payout-today">Rp 0</p>
+            <small id="label-date-2">-</small>
         </div>
     </div>
 
-    <input type="text" id="adminSearch" placeholder="Cari User ID, ID Tiket, atau Tanggal..." onkeyup="loadData()">
+    <input type="text" id="adminSearch" placeholder="Cari User ID, ID Tiket, atau Tanggal (Contoh: 14 Maret 2026)..." onkeyup="loadData()">
 
     <div class="data-table-container">
         <table>
@@ -149,58 +152,72 @@
 
 <script>
     function fmt(n) { return "Rp " + Math.floor(n).toLocaleString('id-ID'); }
+    
+    // Fungsi mendapatkan format tanggal yang sama dengan halaman input
+    function getToday() { 
+        return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}); 
+    }
 
     function loadData() {
         const db = JSON.parse(localStorage.getItem('king_db') || '[]');
         const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
         const tbody = document.getElementById('adminBody');
+        const todayStr = getToday();
+        
         tbody.innerHTML = '';
 
-        let countDone = 0;
-        let totalPayout = 0;
+        let totalDoneToday = 0;
+        let payoutToday = 0;
 
-        const filtered = db.filter(i => 
-            i.u.toLowerCase().includes(searchTerm) || 
-            i.p.toLowerCase().includes(searchTerm) ||
-            i.d.toLowerCase().includes(searchTerm)
-        ).sort((a,b) => b.t - a.t);
+        // Update Label Tanggal di Card Statistik
+        document.getElementById('label-date-1').innerText = todayStr;
+        document.getElementById('label-date-2').innerText = todayStr;
 
-        filtered.forEach(i => {
-            if (i.s === 'Done') {
-                countDone++;
-                totalPayout += i.bonus;
+        // Urutkan data terbaru di atas
+        const sortedDb = [...db].sort((a,b) => b.t - a.t);
+
+        sortedDb.forEach(i => {
+            // Kalkulasi Statistik Khusus HARI INI
+            if (i.d === todayStr && i.s === 'Done') {
+                totalDoneToday++;
+                payoutToday += i.bonus;
             }
 
-            const badgeClass = i.s === 'Done' ? 'badge-done' : (i.s === 'Hangus' ? 'badge-hangus' : 'badge-waiting');
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td style="color:var(--gray)">${i.d}</td>
-                    <td><strong>${i.u}</strong></td>
-                    <td style="font-family:monospace">${i.p}</td>
-                    <td style="color:var(--gold); font-weight:bold">${fmt(i.bonus)}</td>
-                    <td><span class="badge ${badgeClass}">${i.s.toUpperCase()}</span></td>
-                    <td style="text-align:center">
-                        <button class="btn btn-edit" onclick="editData(${i.id})">EDIT</button>
-                        <button class="btn btn-del" onclick="deleteData(${i.id})">HAPUS</button>
-                    </td>
-                </tr>
-            `;
+            // Tampilkan di tabel jika sesuai pencarian (Cari bisa lintas tanggal)
+            if (i.u.toLowerCase().includes(searchTerm) || 
+                i.p.toLowerCase().includes(searchTerm) ||
+                i.d.toLowerCase().includes(searchTerm)) {
+                
+                const badgeClass = i.s === 'Done' ? 'badge-done' : (i.s === 'Hangus' ? 'badge-hangus' : 'badge-waiting');
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:var(--gray)">${i.d}</td>
+                        <td><strong>${i.u}</strong></td>
+                        <td style="font-family:monospace">${i.p}</td>
+                        <td style="color:var(--gold); font-weight:bold">${fmt(i.bonus)}</td>
+                        <td><span class="badge ${badgeClass}">${i.s.toUpperCase()}</span></td>
+                        <td style="text-align:center">
+                            <button class="btn btn-edit" onclick="editData(${i.id})">EDIT</button>
+                            <button class="btn btn-del" onclick="deleteData(${i.id})">HAPUS</button>
+                        </td>
+                    </tr>
+                `;
+            }
         });
 
-        document.getElementById('stat-total').innerText = filtered.length;
-        document.getElementById('stat-done').innerText = countDone;
-        document.getElementById('stat-payout').innerText = fmt(totalPayout);
+        // Update Tampilan Statistik
+        document.getElementById('stat-total').innerText = db.length;
+        document.getElementById('stat-done-today').innerText = totalDoneToday;
+        document.getElementById('stat-payout-today').innerText = fmt(payoutToday);
     }
 
     function editData(id) {
         let db = JSON.parse(localStorage.getItem('king_db') || '[]');
         const idx = db.findIndex(i => i.id === id);
-        
         if (idx !== -1) {
             const newUid = prompt("Edit USER ID:", db[idx].u);
             const newTiket = prompt("Edit ID TIKET:", db[idx].p);
-            
             if (newUid !== null && newTiket !== null) {
                 db[idx].u = newUid.trim().toUpperCase();
                 db[idx].p = newTiket.trim();
@@ -211,7 +228,7 @@
     }
 
     function deleteData(id) {
-        if (confirm("Hapus data ini secara permanen?")) {
+        if (confirm("Hapus data ini?")) {
             let db = JSON.parse(localStorage.getItem('king_db') || '[]');
             db = db.filter(i => i.id !== id);
             localStorage.setItem('king_db', JSON.stringify(db));
@@ -221,19 +238,19 @@
 
     function exportCSV() {
         const db = JSON.parse(localStorage.getItem('king_db') || '[]');
-        if (db.length === 0) return alert("Tidak ada data");
-        let csv = "Tanggal,User ID,Tiket ID,Bonus,Status\n";
+        if (db.length === 0) return alert("Data kosong");
+        let csv = "\uFEFFTanggal,User ID,Tiket ID,Bonus,Status\n";
         db.forEach(i => { csv += `${i.d},${i.u},${i.p},${i.bonus},${i.s}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'rekap_goltogel.csv';
+        a.download = `rekap_admin_${getToday()}.csv`;
         a.click();
     }
 
     function resetDB() {
-        if (confirm("HAPUS SEMUA DATA DATABASE?")) {
+        if (confirm("⚠️ PERINGATAN: Hapus SELURUH data database?")) {
             localStorage.setItem('king_db', '[]');
             loadData();
         }
@@ -241,6 +258,8 @@
 
     window.onload = loadData;
     window.addEventListener('storage', loadData);
+    // Refresh otomatis setiap 1 menit untuk cek ganti hari
+    setInterval(loadData, 60000);
 </script>
 
 </body>

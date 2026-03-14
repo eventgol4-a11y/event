@@ -8,10 +8,13 @@
         :root { --gold: #d4af37; --bg: #0b0f19; --card: #161b2a; --text: #ffffff; --gray: #94a3b8; --red: #ff4d4d; --green: #00ff88; --warn: #ffcc00; --line: #2d3748; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* Header dengan Logo */
         header { background: var(--card); padding: 15px 25px; border-radius: 12px; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .header-left { display: flex; align-items: center; gap: 15px; }
-        .header-left img { height: 45px; width: auto; }
+        .header-left img { height: 45px; width: auto; } /* Ukuran Logo */
         .brand-title { margin: 0; color: var(--gold); font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; }
+        
         .amount { font-size: 1.5rem; color: var(--gold); font-weight: 800; }
         .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
         .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--line); }
@@ -20,13 +23,16 @@
         input, select { width: 100%; padding: 10px; background: #000; border: 1px solid var(--line); border-radius: 6px; color: #fff; box-sizing: border-box; outline: none; }
         .btn-primary { width: 100%; padding: 12px; background: var(--gold); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; }
         .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .search-box { margin-bottom: 15px; }
         .date-divider { background: rgba(212, 175, 55, 0.1); color: var(--gold); padding: 8px 15px; border-radius: 6px; margin: 20px 0 10px 0; font-weight: bold; border-left: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
         table { width: 100%; border-collapse: collapse; }
         th { padding: 12px; text-align: left; color: var(--gold); font-size: 11px; border-bottom: 2px solid var(--line); text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
         .status-select { padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; background: transparent; border: 1px solid var(--line); color: inherit; }
         .btn-del { color: var(--red); background: none; border: 1px solid var(--red); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; }
-        @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } }
+
+        @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } .header-left img { height: 35px; } }
     </style>
 </head>
 <body>
@@ -48,7 +54,8 @@
             <h4 style="margin-top:0; color:var(--gold)">INPUT KLAIM</h4>
             <form id="claimForm">
                 <div class="form-group"><label>USER ID</label><input type="text" id="uid" required></div>
-                <div class="form-group"><label>EVENT</label>
+                <div class="form-group">
+                    <label>EVENT</label>
                     <select id="evtType" onchange="runCalc()">
                         <option value="fs">FREE SPIN (20%)</option>
                         <option value="bs">BUY SPIN (25%)</option>
@@ -58,96 +65,133 @@
                     <div class="form-group" style="flex:1"><label>TOTAL MENANG</label><input type="number" id="win" oninput="runCalc()" required></div>
                     <div class="form-group" style="flex:1"><label>BETTINGAN</label><input type="number" id="bet" oninput="runCalc()" required></div>
                 </div>
+                <div id="bs-extra" style="display:none;" class="form-group"><label>SUPER SCATTER</label><input type="number" id="scat" value="0" oninput="runCalc()"></div>
+                
                 <div style="text-align:center; padding:15px; border:1px dashed var(--gold); border-radius:8px; margin-bottom:15px;">
                     <small style="color:var(--gray)">DAPAT BONUS</small>
                     <div id="live-bonus" style="font-size:1.2rem; font-weight:bold; color:var(--gold)">Rp 0</div>
+                    <div id="err" style="color:var(--red); font-size:10px; display:none; margin-top:5px">⚠️ MENANG MINIMAL 450,000!</div>
                 </div>
+
                 <div class="form-group"><label>ID TIKET</label><input type="text" id="period" required></div>
-                <button type="submit" id="btnSubmit" class="btn-primary">SIMPAN KE GOOGLE SHEETS</button>
+                <button type="submit" id="btnSubmit" class="btn-primary">SIMPAN DATA</button>
             </form>
         </aside>
 
         <main>
-            <div class="card"><input type="text" id="src" placeholder="Cari User ID atau ID Tiket..." onkeyup="render()"></div>
+            <div class="card search-box">
+                <input type="text" id="src" placeholder="Cari User ID atau ID Tiket..." onkeyup="render()">
+            </div>
             <div id="list"></div>
         </main>
     </div>
 </div>
 
-
-
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyjbQz7V2iNNnqQoRcHglSi1Zat8c4KpI3Y5Hu0QpA496lpwTSvas09kQZj_6ahH4R69g/exec"; 
-    let db = [];
+    let db = JSON.parse(localStorage.getItem('king_db') || '[]');
 
-    function fmt(n) { return "Rp " + Math.floor(n).toLocaleString('en-US'); }
-    function getToday() { return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}); }
+    function fmt(n) {
+        return "Rp " + Math.floor(n).toLocaleString('en-US');
+    }
+
+    function getToday() {
+        return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    }
 
     function runCalc() {
         const t = document.getElementById('evtType').value;
         const w = parseFloat(document.getElementById('win').value) || 0;
         const b = parseFloat(document.getElementById('bet').value) || 0;
-        let bonus = (t === 'fs') ? (w * 0.2) : ((w - b) * 0.25);
+        const s = parseFloat(document.getElementById('scat').value) || 0;
+        
+        document.getElementById('bs-extra').style.display = (t === 'bs') ? 'block' : 'none';
+        
+        let bonus = (t === 'fs') ? (w * 0.2) : ((w - b - s) * 0.25);
+        bonus = Math.max(0, bonus);
         document.getElementById('live-bonus').innerText = fmt(bonus);
-        return Math.max(0, bonus);
-    }
-
-    function fetchData() {
-        fetch(WEB_APP_URL).then(res => res.json()).then(data => {
-            db = data.map(r => ({id: r[0], u: r[1], evt: r[2], win: r[3], b: r[4], bonus: r[5], p: r[6], s: r[7]}));
-            render();
-            updateTotal();
-        });
+        
+        const low = (w > 0 && w < 450000);
+        document.getElementById('err').style.display = low ? 'block' : 'none';
+        document.getElementById('btnSubmit').disabled = low;
+        return bonus;
     }
 
     document.getElementById('claimForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const data = {
-            action: 'add',
-            uid: document.getElementById('uid').value.trim().toUpperCase(),
-            evt: document.getElementById('evtType').value,
-            win: document.getElementById('win').value,
-            bet: document.getElementById('bet').value,
-            bonus: runCalc(),
-            period: document.getElementById('period').value.trim()
-        };
-        fetch(WEB_APP_URL, {method: "POST", mode: "no-cors", body: JSON.stringify(data)})
-        .then(() => { alert("Data Tersimpan di Cloud!"); this.reset(); fetchData(); });
+        const u = document.getElementById('uid').value.trim().toUpperCase();
+        const p = document.getElementById('period').value.trim();
+        const b = parseFloat(document.getElementById('bet').value) || 0;
+        const d = getToday();
+
+        if (db.some(i => (i.u === u || i.p === p) && i.d === d)) {
+            alert("⚠️ USER ID ATAU ID TIKET INI SUDAH KLAIM HARI INI!"); 
+            return;
+        }
+
+        db.push({ id: Date.now(), u, b, bonus: runCalc(), p, s: 'Waiting', d, t: Date.now() });
+        save();
+        this.reset();
+        runCalc();
     });
+
+    function save() {
+        localStorage.setItem('king_db', JSON.stringify(db));
+        render();
+        updateTotal();
+    }
 
     function render() {
         const cont = document.getElementById('list');
         const sTerm = document.getElementById('src').value.toLowerCase();
         cont.innerHTML = '';
+
         let filtered = db.filter(i => i.u.toLowerCase().includes(sTerm) || i.p.toLowerCase().includes(sTerm));
-        
-        let h = `<div class="card" style="padding:0; overflow-x:auto;"><table><tr><th>User ID</th><th>Status</th><th>Bettingan</th><th>Bonus</th><th>ID Tiket</th><th>Aksi</th></tr>`;
-        filtered.forEach(i => {
-            const c = i.s === 'Done' ? '#00ff88' : (i.s === 'Hangus' ? '#ff4d4d' : '#ffcc00');
-            h += `<tr><td><strong>${i.u}</strong></td><td><select class="status-select" onchange="upd('${i.id}', this.value)" style="color:${c}"><option value="Waiting" ${i.s === 'Waiting'?'selected':''}>Waiting</option><option value="Done" ${i.s === 'Done'?'selected':''}>Done</option><option value="Hangus" ${i.s === 'Hangus'?'selected':''}>Hangus</option></select></td><td>${fmt(i.b)}</td><td>${fmt(i.bonus)}</td><td>${i.p}</td><td><button class="btn-del" onclick="del('${i.id}')">HAPUS</button></td></tr>`;
+        filtered.sort((a,b) => b.t - a.t);
+
+        const groups = filtered.reduce((a, i) => {
+            if (!a[i.d]) a[i.d] = [];
+            a[i.d].push(i);
+            return a;
+        }, {});
+
+        Object.keys(groups).forEach(tgl => {
+            const dayTotal = groups[tgl].filter(i => i.s === 'Done').reduce((s, i) => s + i.bonus, 0);
+            let h = `<div class="date-divider"><span>📅 ${tgl}</span><span style="font-size:12px">Total Done: ${fmt(dayTotal)}</span></div>`;
+            h += `<div class="card" style="padding:0; overflow-x:auto;"><table><tr><th>User ID</th><th>Status</th><th>Bettingan</th><th>Bonus</th><th>ID Tiket</th><th>Aksi</th></tr>`;
+            
+            groups[tgl].forEach(i => {
+                const c = i.s === 'Done' ? '#00ff88' : (i.s === 'Hangus' ? '#ff4d4d' : '#ffcc00');
+                h += `<tr><td><strong>${i.u}</strong></td><td>
+                    <select class="status-select" onchange="upd(${i.id}, this.value)" style="color:${c}">
+                        <option value="Waiting" ${i.s === 'Waiting' ? 'selected' : ''}>Waiting</option>
+                        <option value="Done" ${i.s === 'Done' ? 'selected' : ''}>Done</option>
+                        <option value="Hangus" ${i.s === 'Hangus' ? 'selected' : ''}>Hangus</option>
+                    </select>
+                </td><td>${fmt(i.b)}</td><td>${fmt(i.bonus)}</td><td style="font-family:monospace; color:var(--gray)">${i.p}</td>
+                <td><button class="btn-del" onclick="del(${i.id})">HAPUS</button></td></tr>`;
+            });
+            cont.innerHTML += h + `</table></div>`;
         });
-        cont.innerHTML = h + `</table></div>`;
     }
 
     function upd(id, val) {
-        fetch(WEB_APP_URL, {method: "POST", mode: "no-cors", body: JSON.stringify({action: 'update', id: id, status: val})})
-        .then(() => fetchData());
+        const idx = db.findIndex(i => i.id === id);
+        if (idx !== -1) { db[idx].s = val; save(); }
     }
 
     function del(id) {
-        if(confirm("Hapus data ini?")) {
-            fetch(WEB_APP_URL, {method: "POST", mode: "no-cors", body: JSON.stringify({action: 'delete', id: id})})
-            .then(() => fetchData());
-        }
+        if(confirm("Hapus data ini?")) { db = db.filter(i => i.id !== id); save(); }
     }
 
     function updateTotal() {
-        const total = db.filter(i => i.s === 'Done').reduce((s, i) => s + i.bonus, 0);
+        const today = getToday();
+        document.getElementById('current-date-label').innerText = "PAYOUT HARI INI (" + today + ")";
+        const total = db.filter(i => i.s === 'Done' && i.d === today).reduce((s, i) => s + i.bonus, 0);
         document.getElementById('global-payout').innerText = fmt(total);
     }
 
-    window.onload = fetchData;
-    setInterval(fetchData, 30000);
+    window.onload = save;
+    setInterval(updateTotal, 60000);
 </script>
 </body>
 </html>

@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        /* CSS Anda tetap sama persis */
         :root { --gold: #d4af37; --bg: #0b0f19; --card: #161b2a; --text: #ffffff; --gray: #94a3b8; --red: #ff4d4d; --green: #00ff88; --warn: #ffcc00; --line: #2d3748; }
         body { font-family: 'Segoe UI', sans-serif; background: url('https://cdn.areabermain.club/assets/cdn/az2/2026/03/03/20260303/9fcaa8d326ac01d4bb57a6c10244fe96/goltogel-background.png') no-repeat center center fixed; background-size: cover; color: var(--text); margin: 0; padding: 20px; min-height: 100vh; }
         .container { max-width: 1300px; margin: 0 auto; }
@@ -65,16 +64,15 @@
 <script>
     // MASUKKAN CONFIG FIREBASE ANDA DI SINI
     const firebaseConfig = {
-        apiKey: "...",
+        apiKey: "ISI_API_KEY_ANDA",
         databaseURL: "https://klaim-buy-free-spin-default-rtdb.asia-southeast1.firebasedatabase.app/",
-        projectId: "...",
-        // ... isi sisanya dari Firebase console Anda
+        projectId: "ISI_PROJECT_ID_ANDA"
     };
     firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('king_db');
     let dbData = [];
 
-    // Sinkronisasi Real-time dari Firebase
+    // Mengambil data real-time dari Firebase
     dbRef.on('value', (snap) => {
         const data = snap.val();
         dbData = data ? Object.values(data) : [];
@@ -92,14 +90,16 @@
         let doneToday = 0;
         let payoutToday = 0;
 
-        dbData.sort((a,b) => b.id - a.id).forEach(i => {
+        dbData.sort((a,b) => b.t - a.t).forEach(i => {
             if (i.u.toLowerCase().includes(search) || i.p.toLowerCase().includes(search)) {
                 if(i.d === today && i.s === 'Done') { doneToday++; payoutToday += i.bonus; }
 
                 tbody.innerHTML += `<tr>
-                    <td>${i.d}</td><td><strong>${i.u}</strong></td><td>${i.p}</td>
-                    <td style="color:var(--gold)">${fmt(i.bonus)}</td>
-                    <td><span class="badge badge-${i.s.toLowerCase()}">${i.s}</span></td>
+                    <td style="color:var(--gray)">${i.d}</td>
+                    <td><strong>${i.u}</strong></td>
+                    <td style="font-family:monospace">${i.p}</td>
+                    <td style="color:var(--gold); font-weight:bold">${fmt(i.bonus)}</td>
+                    <td><span class="badge badge-${i.s.toLowerCase()}">${i.s.toUpperCase()}</span></td>
                     <td style="text-align:center">
                         <button class="btn btn-export" onclick="updStatus(${i.id}, 'Done')">Done</button>
                         <button class="btn btn-del" onclick="delData(${i.id})">Hapus</button>
@@ -114,8 +114,8 @@
     }
 
     function updStatus(id, status) { dbRef.child(id).update({s: status}); }
-    function delData(id) { if(confirm("Hapus data?")) dbRef.child(id).remove(); }
-    function resetDB() { if(confirm("Hapus SEMUA data?")) dbRef.remove(); }
+    function delData(id) { if(confirm("Hapus data ini?")) dbRef.child(id).remove(); }
+    function resetDB() { if(confirm("⚠️ Hapus SEMUA data?")) dbRef.remove(); }
 </script>
 </body>
 </html>

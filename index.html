@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KING DASHBOARD - GOLTOGEL</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        /* CSS Anda tetap sama */
         :root { --gold: #d4af37; --bg: #0b0f19; --card: #161b2a; --text: #ffffff; --gray: #94a3b8; --red: #ff4d4d; --green: #00ff88; --warn: #ffcc00; --line: #2d3748; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        
-        /* Header dengan Logo */
         header { background: var(--card); padding: 15px 25px; border-radius: 12px; border: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         .header-left { display: flex; align-items: center; gap: 15px; }
         .header-left img { height: 45px; width: auto; }
         .brand-title { margin: 0; color: var(--gold); font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; }
-        
         .amount { font-size: 1.5rem; color: var(--gold); font-weight: 800; }
         .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
         .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--line); }
@@ -23,15 +23,11 @@
         input, select { width: 100%; padding: 10px; background: #000; border: 1px solid var(--line); border-radius: 6px; color: #fff; box-sizing: border-box; outline: none; }
         .btn-primary { width: 100%; padding: 12px; background: var(--gold); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; }
         .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
-        
-        .search-box { margin-bottom: 15px; }
         .date-divider { background: rgba(212, 175, 55, 0.1); color: var(--gold); padding: 8px 15px; border-radius: 6px; margin: 20px 0 10px 0; font-weight: bold; border-left: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
         table { width: 100%; border-collapse: collapse; }
         th { padding: 12px; text-align: left; color: var(--gold); font-size: 11px; border-bottom: 2px solid var(--line); text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
         .status-select { padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; background: transparent; border: 1px solid var(--line); color: inherit; }
-
-        @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } .header-left img { height: 35px; } }
     </style>
 </head>
 <body>
@@ -87,28 +83,41 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('king_db') || '[]');
+    // MASUKKAN CONFIG FIREBASE ANDA DI SINI
+    const firebaseConfig = {
+        apiKey: "AIzaSy...",
+        authDomain: "...",
+        databaseURL: "https://klaim-buy-free-spin-default-rtdb.asia-southeast1.firebasedatabase.app/
+",
+        projectId: "...",
+        storageBucket: "...",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref('king_db');
+    let db = [];
 
-    function fmt(n) {
-        return "Rp " + Math.floor(n).toLocaleString('en-US');
-    }
+    // Mengambil data dari Firebase secara real-time
+    dbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        db = data ? Object.values(data) : [];
+        render();
+        updateTotal();
+    });
 
-    function getToday() {
-        return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-    }
+    function fmt(n) { return "Rp " + Math.floor(n).toLocaleString('en-US'); }
+    function getToday() { return new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}); }
 
     function runCalc() {
         const t = document.getElementById('evtType').value;
         const w = parseFloat(document.getElementById('win').value) || 0;
         const b = parseFloat(document.getElementById('bet').value) || 0;
         const s = parseFloat(document.getElementById('scat').value) || 0;
-        
         document.getElementById('bs-extra').style.display = (t === 'bs') ? 'block' : 'none';
-        
         let bonus = (t === 'fs') ? (w * 0.2) : ((w - b - s) * 0.25);
         bonus = Math.max(0, bonus);
         document.getElementById('live-bonus').innerText = fmt(bonus);
-        
         const low = (w > 0 && w < 450000);
         document.getElementById('err').style.display = low ? 'block' : 'none';
         document.getElementById('btnSubmit').disabled = low;
@@ -127,37 +136,24 @@
             return;
         }
 
-        db.push({ id: Date.now(), u, b, bonus: runCalc(), p, s: 'Waiting', d, t: Date.now() });
-        save();
+        const id = Date.now();
+        dbRef.child(id).set({ id, u, b, bonus: runCalc(), p, s: 'Waiting', d, t: id });
         this.reset();
         runCalc();
     });
-
-    function save() {
-        localStorage.setItem('king_db', JSON.stringify(db));
-        render();
-        updateTotal();
-    }
 
     function render() {
         const cont = document.getElementById('list');
         const sTerm = document.getElementById('src').value.toLowerCase();
         cont.innerHTML = '';
-
         let filtered = db.filter(i => i.u.toLowerCase().includes(sTerm) || i.p.toLowerCase().includes(sTerm));
         filtered.sort((a,b) => b.t - a.t);
-
-        const groups = filtered.reduce((a, i) => {
-            if (!a[i.d]) a[i.d] = [];
-            a[i.d].push(i);
-            return a;
-        }, {});
+        const groups = filtered.reduce((a, i) => { if (!a[i.d]) a[i.d] = []; a[i.d].push(i); return a; }, {});
 
         Object.keys(groups).forEach(tgl => {
             const dayTotal = groups[tgl].filter(i => i.s === 'Done').reduce((s, i) => s + i.bonus, 0);
             let h = `<div class="date-divider"><span>📅 ${tgl}</span><span style="font-size:12px">Total Done: ${fmt(dayTotal)}</span></div>`;
             h += `<div class="card" style="padding:0; overflow-x:auto;"><table><tr><th>User ID</th><th>Status</th><th>Bettingan</th><th>Bonus</th><th>ID Tiket</th></tr>`;
-            
             groups[tgl].forEach(i => {
                 const c = i.s === 'Done' ? '#00ff88' : (i.s === 'Hangus' ? '#ff4d4d' : '#ffcc00');
                 h += `<tr><td><strong>${i.u}</strong></td><td>
@@ -173,8 +169,7 @@
     }
 
     function upd(id, val) {
-        const idx = db.findIndex(i => i.id === id);
-        if (idx !== -1) { db[idx].s = val; save(); }
+        dbRef.child(id).update({ s: val });
     }
 
     function updateTotal() {
@@ -183,9 +178,6 @@
         const total = db.filter(i => i.s === 'Done' && i.d === today).reduce((s, i) => s + i.bonus, 0);
         document.getElementById('global-payout').innerText = fmt(total);
     }
-
-    window.onload = save;
-    setInterval(updateTotal, 60000);
 </script>
 </body>
 </html>
